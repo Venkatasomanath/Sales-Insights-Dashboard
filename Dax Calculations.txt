@@ -1,0 +1,91 @@
+-- Key DAX Measures for Power BI
+
+-- Total Revenue
+Total Revenue = SUM(sales[total_amount])
+
+-- Total Profit
+Total Profit = SUM(sales[total_amount]) - SUM(sales[quantity] * RELATED(products[cost_price]))
+
+-- Profit Margin
+Profit Margin = DIVIDE([Total Profit], [Total Revenue], 0)
+
+-- Monthly Revenue
+Monthly Revenue = 
+CALCULATE(
+    [Total Revenue],
+    DATESMTD('Date'[Date])
+)
+
+-- Previous Month Revenue
+Previous Month Revenue = 
+CALCULATE(
+    [Total Revenue],
+    PREVIOUSMONTH('Date'[Date])
+)
+
+-- Revenue Growth %
+Revenue Growth % = 
+DIVIDE(
+    [Total Revenue] - [Previous Month Revenue],
+    [Previous Month Revenue],
+    0
+)
+
+-- YTD Revenue
+YTD Revenue = 
+TOTALYTD(
+    [Total Revenue],
+    'Date'[Date]
+)
+
+-- Average Order Value
+Average Order Value = 
+DIVIDE(
+    [Total Revenue],
+    DISTINCTCOUNT(sales[sale_id]),
+    0
+)
+
+-- Customer Count
+Total Customers = DISTINCTCOUNT(customers[customer_id])
+
+-- Regional Revenue Distribution
+Regional Revenue = 
+CALCULATE(
+    [Total Revenue],
+    ALLEXCEPT(customers, customers[region])
+)
+
+-- Top Product by Revenue
+Top Product = 
+MAXX(
+    TOPN(1, VALUES(products[product_name]), [Total Revenue]),
+    products[product_name]
+)
+
+-- Moving Average (30 days)
+30 Day Moving Avg = 
+AVERAGEX(
+    DATESINPERIOD(
+        'Date'[Date],
+        LASTDATE('Date'[Date]),
+        -30,
+        DAY
+    ),
+    [Total Revenue]
+)
+
+-- Sales Trend
+Sales Trend = 
+VAR CurrentRevenue = [Total Revenue]
+VAR PreviousRevenue = [Previous Month Revenue]
+RETURN
+IF(
+    CurrentRevenue > PreviousRevenue,
+    "Increasing",
+    IF(
+        CurrentRevenue < PreviousRevenue,
+        "Decreasing",
+        "Stable"
+    )
+)
